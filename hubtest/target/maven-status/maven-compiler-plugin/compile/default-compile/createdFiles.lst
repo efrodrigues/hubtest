@@ -1,0 +1,13 @@
+br\com\eduardo\hubtest\service\TransacaoService.class
+br\com\eduardo\hubtest\model\StatusConta.class
+br\com\eduardo\hubtest\service\ContaService.class
+br\com\eduardo\hubtest\exception\TransacaoException.class
+br\com\eduardo\hubtest\service\PessoaService.class
+br\com\eduardo\hubtest\model\Transacao.class
+br\com\eduardo\hubtest\model\PessoaFisica.class
+br\com\eduardo\hubtest\entitymanager\JpaEntityManager.class
+br\com\eduardo\hubtest\model\Transferencia.class
+br\com\eduardo\hubtest\model\PessoaJuridica.class
+br\com\eduardo\hubtest\model\Pessoa.class
+br\com\eduardo\hubtest\model\Aporte.class
+br\com\eduardo\hubtest\model\Conta.class
