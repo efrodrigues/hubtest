@@ -1,0 +1,134 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cadastro de Pessoa</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+	<h2>Cadastro de Pessoa</h2>
+	<br>
+	<table id="tblPessoa">
+		<tr>
+			<th>ID</th>
+			<th>CPF/CNPJ</th>
+			<th>Nome Completo</th>
+			<th>Data Nascimento</th>
+			<th>Nome Fantasia</th>
+			<th>Razão Social</th>
+		</tr>
+	</table>
+	<br>
+	<form id="formularioPessoa">
+		ID:<input id="txtId" type="text" readonly /><br/> 
+		CPF/CNPJ:<input	id="txtCpfCnpj" type="text" /><br/> 
+		Nome Completo:<input id="txtNomeCompleto" type="text" /><br/> 
+		Data Nascimento:<input id="txtDataNascimento" type="date" /><br/> 
+		<label for="txtNomeFantasia">Nome Fantasia</label><input id="txtNomeFantasia" type="text" /><br/>
+		<label for="txtRazaoSocial">Razão Social</label><input id="txtRazaoSocial" type="text" /><br/>
+		<label for="selTipoPessoa">Tipo Pessoa</label>
+		<select id="selTipoPessoa">
+			<option value="PessoaFisica">Pessoa Física</option>
+			<option value="PessoaJuridica">Pessoa Jurídica</option>
+		</select>
+		<br/>
+		<input id="btnSalvar"
+			type="button" value="Salvar" onclick="salvarPessoa();" />
+	</form>
+
+	<script>
+		var service = 'http://localhost:8080/hubtest';
+
+		$(document).ready(
+				function() {
+
+					jQuery.support.cors = true;
+
+					$.ajax({
+						type : "GET",
+						url : service + '/pessoa/listar/',
+						data : "{}",
+						contentType : "application/json; charset=utf-8",
+						dataType : "json",
+						cache : false,
+						success : function(data) {
+
+							var trHTML = '';
+
+							$.each(data, function(i, item) {
+
+								var dataNascimento = new Date(data[i].dataNascimento);
+								var dataNascimentoStr = '';
+								if (data[i].dataNascimento) {dataNascimentoStr = dataNascimento.getDate() + '/' + (dataNascimento.getMonth()+1) + '/' + dataNascimento.getFullYear();};
+								var nomeCompleto = '';
+								if (data[i].nomeCompleto) {nomeCompleto = data[i].nomeCompleto;};
+								var nomeFantasia = '';
+								if (data[i].nomeFantasia) {nomeFantasia = data[i].nomeFantasia;};
+								var razaoSocial = '';
+								if (data[i].razaoSocial) {razaoSocial = data[i].razaoSocial;};
+								
+								trHTML += '<tr><td>' + data[i].id + '</td><td>'
+										+ data[i].cpfCnpj + '</td><td>'
+										+ nomeCompleto + '</td><td>'
+										+ dataNascimentoStr + '</td><td>'
+										+ nomeFantasia + '</td><td>'
+										+ razaoSocial + '</td></tr>';
+							});
+
+							$('#tblPessoa').append(trHTML);
+
+						},
+						error : function(msg) {
+							alert(msg.responseText);
+						}
+					});
+				})
+
+		function salvarPessoa() {
+			$.ajax({
+				type : 'POST',
+				contentType : 'application/json',
+				url : service + '/pessoa/cadastrar/',
+				dataType : "json",
+				data : formToJSON(),
+				success : function(data, textStatus, jqXHR) {
+					alert(jqXHR.responseText);
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					alert(jqXHR.responseText);
+				}
+			});
+		}
+
+		function formToJSON() {
+			
+			var tipoPessoa = $('#selTipoPessoa').val();
+			//var dataNascimentoArray = $('#txtDataNascimento').val().split('/');
+									
+			if (tipoPessoa == 'PessoaFisica') {
+				var dataNascimentoArray = $('#txtDataNascimento').val().split('-');
+				var dataNascimento = dataNascimentoArray[0] + '-' + dataNascimentoArray[1] + '-' + (Number(dataNascimentoArray[2])+1)
+				return JSON.stringify({
+					"@class" : tipoPessoa,
+					"id" : null,
+					"cpfCnpj" : $('#txtCpfCnpj').val(),
+					"nomeCompleto" : $('#txtNomeCompleto').val(),
+					"dataNascimento" : dataNascimento
+				});
+			} else {
+				return JSON.stringify({
+					"@class" : tipoPessoa,
+					"id" : null,
+					"cpfCnpj" : $('#txtCpfCnpj').val(),
+					"nomeFantasia" : $('#txtNomeFantasia').val(),
+					"razaoSocial" : $('#txtRazaoSocial').val()
+				});
+			}
+		}
+	</script>
+
+</body>
+</html>

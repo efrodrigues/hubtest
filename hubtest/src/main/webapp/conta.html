@@ -1,0 +1,157 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cadastro de Pessoa</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+	<h2>Cadastro de Conta</h2>
+	<br>
+	<table id="tblConta">
+		<tr>
+			<th>ID</th>
+			<th>Conta</th>
+			<th>Conta Pai</th>
+			<th>Pessoa</th>
+			<th>CPF/CNPJ</th>
+			<th>Status</th>
+			<th>Data Criação</th>
+		</tr>
+	</table>
+	<br>
+	<form id="formularioConta">
+		<label for="txtId">ID</label> <input id="txtId" type="text" readonly /> 
+		<br>
+		<label for="txtConta">Conta</label> <input id="txtConta" type="text" /> 
+		<br>
+		<label for="txtContaPai">Conta Pai</label> <input id="txtContaPai" type="text" /> 
+		<br>
+		<label for="txtCpfCnpj">CPF/CNPJ</label> <input id="txtCpfCnpj" type="text" onblur="buscarPessoa();" /> 
+		<br> 
+		<label for="selStatus">Status</label> 
+		<select id="selStatus">
+			<option value="Ativo">Ativo</option>
+			<option value="Bloqueado">Bloqueado</option>
+			<option value="Cancelado">Cancelado</option>
+		</select>
+		<br>
+		<input id="btnSalvar" type="button" value="Salvar" onclick="salvarConta();" />
+		<input id="hdnCpfCnpj" type="hidden" />
+		<input id="hdnTipoPessoa" type="hidden" />
+	</form>
+
+	<script>
+		var service = 'http://localhost:8080/hubtest';
+
+		$(document).ready(
+				function() {
+
+					jQuery.support.cors = true;
+
+					$.ajax({
+						type : "GET",
+						url : service + '/conta/listar/',
+						data : "{}",
+						contentType : "application/json; charset=utf-8",
+						dataType : "json",
+						cache : false,
+						success : function(data) {
+
+							var trHTML = '';
+							
+							$.each(data, function(i, item) {
+
+								var contaPai = '';
+								
+								if (data[i].contaPai) {contaPai = data[i].contaPai.id;};
+								
+								var dataCriacao = new Date(data[i].dataCriacao);
+								var dataCriacaoStr = dataCriacao.getDate() + '/' + (dataCriacao.getMonth()+1) + '/' + dataCriacao.getFullYear();
+								
+								trHTML += '<tr><td>' + data[i].id + '</td><td>'
+										+ data[i].nomeConta + '</td><td>'
+										+ contaPai + '</td><td>'
+										+ data[i].pessoa.nomeCompleto + '</td><td>'
+										+ data[i].pessoa.cpfCnpj + '</td><td>'
+										+ data[i].status + '</td><td>'
+										+ dataCriacaoStr + '</td></tr>';
+							});
+
+							$('#tblConta').append(trHTML);
+
+						},
+						error : function(msg) {
+							alert(msg.responseText);
+						}
+					});
+				})
+
+		function salvarConta() {
+			if (validarObrigatorios()){
+				$.ajax({
+					type : 'POST',
+					contentType : 'application/json',
+					url : service + '/conta/cadastrar/',
+					dataType : "json",
+					data : formToJSON(),
+					success : function(jqXHR, textStatus, errorThrown) {
+						alert(jqXHR.responseText);
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+						alert(jqXHR.responseText);
+					}
+				});
+			}
+		}
+
+		function formToJSON() {
+			if ($('#txtContaPai').val()){
+				return JSON.stringify({
+					"id" : null,
+					"nomeConta" : $('#txtConta').val(),
+					"contaPai" : {"id" : $('#txtContaPai').val()},
+					"pessoa" : {"@class": $('#hdnTipoPessoa').val(), "cpfCnpj" : $('#hdnCpfCnpj').val()},
+					"status" : $('#selStatus').val()
+				});
+			} else {
+				return JSON.stringify({
+					"id" : null,
+					"nomeConta" : $('#txtConta').val(),
+					"pessoa" : {"@class": $('#hdnTipoPessoa').val(), "cpfCnpj" : $('#txtCpfCnpj').val()},
+					"status" : $('#selStatus').val()
+				});
+			}
+		}
+		
+		function validarObrigatorios(){
+			if (!$('#hdnCpfCnpj').val() || !$('#hdnTipoPessoa').val()){
+				alert('Favor informar CPF/CNPJ');
+				return false;
+			}
+			return true;
+		}
+		
+		function buscarPessoa(){
+			$.ajax({
+				type : 'GET',
+				contentType : 'application/json',
+				url : service + '/pessoa/buscar/' + $('#txtCpfCnpj').val(),
+				dataType : "json",
+				data : {},
+				success : function(data) {
+					$('#hdnCpfCnpj').val(data.cpfCnpj);
+					$('#hdnTipoPessoa').val(data["@class"]);
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					alert(jqXHR.responseText);
+				}
+			});
+		}
+	</script>
+
+</body>
+</html>

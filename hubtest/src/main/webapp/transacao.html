@@ -1,0 +1,161 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Histórico de Transações</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+	<h2>Histórico de Transações</h2>
+	<br>
+	<table id="tblConta">
+		<tr>
+			<th>ID</th>
+			<th>Conta Credora</th>
+			<th>Conta Débito</th>
+			<th>Código Externo</th>
+			<th>Tipo Transação</th>
+			<th>Data Transação</th>
+			<th>Valor Transação</th>
+		</tr>
+	</table>
+	<br>
+	<form id="formularioConta">
+		<label for="txtId">ID</label> <input id="txtId" type="text" readonly /> 
+		<br>
+		<label for="txtContaCredora">Conta Credora</label> <input id="txtContaCredora" type="text" /> 
+		<br>
+		<label for="txtContaDebito">Conta Débito</label> <input id="txtContaDebito" type="text" /> 
+		<br>
+		<label for="txtCodigoExterno">Codigo Externo</label> <input id="txtCodigoExterno" type="text" /> 
+		<br> 
+		<label for="selTipoTransacao">Tipo Transação</label> 
+		<select id="selTipoTransacao">
+			<option value="Transferencia">Transferência</option>
+			<option value="Aporte">Aporte</option>
+		</select> 
+		<br>
+		<label for="txtValorTransacao">Valor Transação</label> <input id="txtValorTransacao" type="text" /> 
+		<br> 
+		<input id="btnSalvar" type="button" value="Salvar" onclick="salvarTransacao();" />
+	</form>
+
+	<script>
+		var service = 'http://localhost:8080/hubtest';
+
+		$(document).ready(
+				function() {
+
+					jQuery.support.cors = true;
+
+					$.ajax({
+						type : "GET",
+						url : service + '/transacao/listar/',
+						data : "{}",
+						contentType : "application/json; charset=utf-8",
+						dataType : "json",
+						cache : false,
+						success : function(data) {
+
+							var trHTML = '';
+							
+							$.each(data, function(i, item) {
+								
+								var contaDebito = '';
+								if (data[i].contaDebito) {contaDebito = data[i].contaDebito.id;};
+								
+								var codigoExterno = '';
+								if (data[i].codigoExterno) {codigoExterno = data[i].codigoExterno;};
+								
+								var dataTransacao = new Date(data[i].dataTransacao)
+								var dataTransacaoStr = dataTransacao.getDate() + '/' + (dataTransacao.getMonth()+1) + '/' + dataTransacao.getFullYear();
+								
+								trHTML += '<tr><td>' + data[i].id + '</td><td>'
+										+ data[i].conta.id + '</td><td>'
+										+ contaDebito + '</td><td>'
+										+ codigoExterno + '</td><td>'
+										+ data[i]["@class"] + '</td><td>'
+										+ dataTransacaoStr + '</td><td>'
+										+ data[i].valorTransacao + '</td></tr>';
+							});
+
+							$('#tblConta').append(trHTML);
+
+						},
+						error : function(msg) {
+							alert(msg.responseText);
+						}
+					});
+				})
+
+		function salvarTransacao() {
+			if (validarObrigatorios()){
+				$.ajax({
+					type : 'POST',
+					contentType : 'application/json',
+					url : service + '/transacao/cadastrar/',
+					dataType : "json",
+					data : formToJSON(),
+					success : function(data, textStatus, jqXHR) {
+						alert(jqXHR.responseText);
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+						alert(jqXHR.responseText);
+					}
+				});
+			}
+		}
+
+		function formToJSON() {
+			
+			var tipoTransacao = $('#selTipoTransacao').val();
+			
+			if (tipoTransacao == 'Transferencia') {
+				return JSON.stringify({
+					"@class" : tipoTransacao,
+					"id" : null,
+					"conta" : {"id" : $('#txtContaCredora').val()},
+					"contaDebito" : {"id" : $('#txtContaDebito').val()},
+					"valorTransacao" : $('#txtValorTransacao').val()
+				});
+			} else {
+				return JSON.stringify({
+					"@class" : tipoTransacao,
+					"id" : null,
+					"conta" : {"id" : $('#txtContaCredora').val()},
+					"codigoExterno" : $('#txtCodigoExterno').val(),
+					"valorTransacao" : $('#txtValorTransacao').val()
+				});
+			}
+		}
+		
+		function validarObrigatorios(){
+			if (!($('#txtContaCredora').val())){
+				alert('Favor informar a Conta');
+				return false;
+			}
+			if (!($('#txtValorTransacao').val())){
+				alert('Favor informar o Valor');
+				return false;
+			}
+			if ($('#selTipoTransacao').val() == 'Transferencia'){
+				if (!($('#txtContaDebito').val())){
+					alert('Favor informar a Conta a ser debitada');
+					return false;
+				}
+			} else {
+				if (!($('#txtCodigoExterno').val())){
+					alert('Favor informar o Código Externo');
+					return false;
+				}
+			}
+			return true;
+		}
+		
+	</script>
+
+</body>
+</html>
